@@ -1,0 +1,5 @@
+{
+  "name": "Worker Status Tracker",
+  "description": "A modern, Excel-style dashboard to track worker processing status, weekly updates, and history.",
+  "requestFramePermissions": []
+}
