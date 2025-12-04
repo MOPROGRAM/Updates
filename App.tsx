@@ -1,9 +1,9 @@
 
-
 import React, { useState, useEffect } from 'react';
-import { Calendar, Lock, Save, FileText, History, User, Users, CheckCircle, AlertCircle, Clock3, LayoutDashboard, ChevronRight, ChevronDown, Activity, Globe, Shield, Trash2, Plus, Upload, X, MoreHorizontal, Download } from 'lucide-react';
-import { Worker, WeeklyReport, StatusType, UpdateLog } from './types';
+import { Calendar, Lock, Save, FileText, History, User, Users, CheckCircle, AlertCircle, Clock3, LayoutDashboard, ChevronRight, ChevronDown, Activity, Globe, Shield, Trash2, Plus, Upload, X, MoreHorizontal, Download, Printer, PieChart, ArrowRight } from 'lucide-react';
+import { Worker, WeeklyReport, StatusType, UpdateLog, DetailedStats, ReportCategory, ReportItem } from './types';
 import { INITIAL_WORKERS, STATUS_COLUMNS } from './constants';
+import * as XLSX from 'xlsx';
 
 const App = () => {
   // State
@@ -20,6 +20,7 @@ const App = () => {
   // Modal State
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState('');
+  const [selectedReport, setSelectedReport] = useState<WeeklyReport | null>(null);
 
   // Initialization
   useEffect(() => {
@@ -82,8 +83,84 @@ const App = () => {
     }
   };
 
+  // --- ANALYTICS ENGINE ---
+
+  const generateDetailedStats = (currentWorkers: Worker[]): DetailedStats => {
+    const stats: DetailedStats = {
+      recentCompletions: [],
+      bottlenecks: [],
+      criticalIssues: [],
+      upcomingArrivals: []
+    };
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Helper to find or create a category group
+    const addToCategory = (list: ReportCategory[], categoryName: string, item: ReportItem) => {
+      let cat = list.find(c => c.categoryName === categoryName);
+      if (!cat) {
+        cat = { categoryName, count: 0, items: [] };
+        list.push(cat);
+      }
+      cat.count++;
+      cat.items.push(item);
+    };
+
+    currentWorkers.forEach(w => {
+      STATUS_COLUMNS.forEach(col => {
+        const data = w.statuses[col.id];
+        if (!data) return;
+
+        // 1. Recent Completions (Done within 7 days)
+        if (data.status === 'done' && data.timestamp) {
+          const updateDate = new Date(data.timestamp);
+          if (updateDate >= sevenDaysAgo) {
+            addToCategory(stats.recentCompletions, col.label, {
+              workerName: w.name,
+              detail: data.date ? `Date: ${data.date}` : undefined,
+              timestamp: data.timestamp
+            });
+          }
+        }
+
+        // 2. Bottlenecks (Waiting)
+        if (data.status === 'waiting') {
+          addToCategory(stats.bottlenecks, col.label, {
+            workerName: w.name,
+            timestamp: data.timestamp
+          });
+        }
+
+        // 3. Critical Issues
+        if (data.status === 'issue') {
+          addToCategory(stats.criticalIssues, col.label, {
+            workerName: w.name,
+            detail: data.note || 'No details provided',
+            timestamp: data.timestamp
+          });
+        }
+
+        // 4. Arrivals
+        if (col.id === 'booking' && data.status === 'done' && data.date) {
+             stats.upcomingArrivals.push({
+               workerName: w.name,
+               detail: data.date
+             });
+        }
+      });
+    });
+
+    // Sort arrivals by date
+    stats.upcomingArrivals.sort((a, b) => (a.detail || '').localeCompare(b.detail || ''));
+
+    return stats;
+  };
+
   const saveWeeklyReport = () => {
     const today = new Date();
+    const detailedStats = generateDetailedStats(workers);
+    
     const report: WeeklyReport = {
       week: currentWeek,
       date: today.toISOString(),
@@ -93,7 +170,8 @@ const App = () => {
         year: 'numeric' 
       }),
       workers: JSON.parse(JSON.stringify(workers)),
-      summary: calculateSummary()
+      summary: calculateSummary(),
+      detailedStats: detailedStats
     };
 
     const newReports = [report, ...weeklyReports.filter(r => r.week !== currentWeek)].slice(0, 12);
@@ -101,46 +179,49 @@ const App = () => {
     
     try {
       localStorage.setItem('weekly_reports_v3', JSON.stringify(newReports));
-      alert('✅ Weekly report archived successfully.');
+      alert('✅ Weekly report analyzed and archived successfully.');
     } catch (error) {
       console.error('Save report error:', error);
       alert('Error saving report');
     }
   };
 
-  const handleDownloadReport = () => {
-    // CSV Header
-    const headers = ['ID', 'Name', ...STATUS_COLUMNS.map(c => c.label), 'Flight Date', 'Latest Note'];
+  const handleExportExcel = () => {
+    const headers = ['ID', 'Worker Name', ...STATUS_COLUMNS.map(c => c.label), 'Flight Arrival', 'Latest Update'];
     
-    // CSV Rows
-    const rows = workers.map((w, index) => {
-      const statusValues = STATUS_COLUMNS.map(col => {
-        const s = w.statuses[col.id];
-        return s?.status === 'select' ? '-' : s?.status || '-';
-      });
-      
-      const flightDate = w.statuses['booking']?.date || '';
-      // Find the last note from any column or history
-      const lastHistory = w.history && w.history.length > 0 ? w.history[0].note || w.history[0].action : '';
+    const data = workers.map((w, index) => {
+      const row: any = {
+        'ID': index + 1,
+        'Worker Name': w.name,
+      };
 
-      return [
-        index + 1,
-        w.name,
-        ...statusValues,
-        flightDate,
-        lastHistory
-      ].map(cell => `"${String(cell || '').replace(/"/g, '""')}"`); // Escape quotes
+      STATUS_COLUMNS.forEach(col => {
+        const s = w.statuses[col.id];
+        let val = '-';
+        if (s?.status === 'done') val = `Done ${s.date ? `(${s.date})` : ''}`;
+        if (s?.status === 'waiting') val = 'Waiting';
+        if (s?.status === 'issue') val = `Issue: ${s.note || ''}`;
+        row[col.label] = val;
+      });
+
+      row['Flight Arrival'] = w.statuses['booking']?.date || '-';
+      
+      const lastHistory = w.history && w.history.length > 0 ? w.history[0] : null;
+      row['Latest Update'] = lastHistory ? `${lastHistory.action} (${lastHistory.user})` : '-';
+
+      return row;
     });
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Worker_Report_${currentWeek}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    
+    // Auto-width columns
+    const wscols = headers.map(h => ({ wch: h.length + 10 }));
+    wscols[1] = { wch: 30 }; // Name column wider
+    worksheet['!cols'] = wscols;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Worker Status");
+    XLSX.writeFile(workbook, `Worker_Report_${currentWeek}.xlsx`);
   };
 
   const calculateSummary = () => {
@@ -168,7 +249,7 @@ const App = () => {
       setIsAuthenticated(true);
       setCurrentUser(user);
       
-      // Save session for 4 hours (4 * 60 * 60 * 1000 ms)
+      // Save session for 4 hours
       const session = {
         user: user,
         expiry: Date.now() + (4 * 60 * 60 * 1000)
@@ -229,8 +310,6 @@ const App = () => {
     saveData(newWorkers);
   };
 
-  // --- NEW FEATURES ---
-
   const handleBulkImport = () => {
     if (!importText.trim()) return;
 
@@ -258,7 +337,7 @@ const App = () => {
   };
 
   const handleDeleteWorker = (e: React.MouseEvent, id: string | number) => {
-    e.stopPropagation(); // Stop click from bubbling to row
+    e.stopPropagation();
     const reason = prompt('Please enter a reason for deletion to confirm (e.g. "Wrong entry", "Duplicate"):');
     
     if (reason && reason.trim().length > 0) {
@@ -279,8 +358,6 @@ const App = () => {
       alert('Confirmation failed. You must type exactly "DELETE ALL" to clear the database.');
     }
   };
-
-  // --------------------
 
   const summary = calculateSummary();
 
@@ -311,7 +388,7 @@ const App = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Abstract Background */}
+        {/* Login UI same as before */}
         <div className="absolute inset-0 z-0 opacity-50">
            <div className="absolute top-0 -left-10 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
            <div className="absolute top-0 -right-10 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
@@ -367,7 +444,7 @@ const App = () => {
         </div>
         
         <div className="absolute bottom-6 text-center text-xs text-slate-600 font-bold">
-          &copy; 2025 Worker Tracking System v3.0
+          &copy; 2025 Worker Tracking System v3.1
         </div>
       </div>
     );
@@ -375,7 +452,6 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans relative">
-      {/* Background Gradient Mesh */}
       <div className="fixed inset-0 z-0 opacity-40 pointer-events-none" 
            style={{
              backgroundImage: `radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%), 
@@ -384,11 +460,9 @@ const App = () => {
            }}>
       </div>
       
-      {/* Top Navigation Bar */}
       <nav className="bg-white/90 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-[66%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center py-2">
-            {/* Logo Area */}
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 rounded-xl shadow-lg shadow-blue-500/30 ring-1 ring-blue-500/50">
                 <Globe className="text-white w-6 h-6" />
@@ -399,7 +473,6 @@ const App = () => {
               </div>
             </div>
 
-            {/* Right Actions */}
             <div className="flex items-center gap-4">
               <div className="hidden lg:flex items-center bg-slate-50/80 rounded-full px-1.5 py-1.5 border border-slate-200/60 shadow-inner">
                 <div className="px-3 py-1.5 bg-white rounded-full shadow-sm text-xs font-bold text-slate-800 flex items-center gap-2 border border-slate-100">
@@ -415,38 +488,20 @@ const App = () => {
               <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block"></div>
               
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleClearAll}
-                  className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-lg text-sm font-bold transition border border-rose-200 hover:border-rose-300"
-                  title="Delete All Workers"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden md:inline">Delete All</span>
+                <button onClick={handleClearAll} className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-lg text-sm font-bold transition border border-rose-200 hover:border-rose-300">
+                  <Trash2 className="w-4 h-4" /> <span className="hidden md:inline">Clear</span>
                 </button>
 
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span className="hidden md:inline">Add</span>
+                <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md">
+                  <Plus className="w-4 h-4 stroke-[3]" /> <span className="hidden md:inline">Add</span>
                 </button>
                 
-                <button
-                  onClick={handleDownloadReport}
-                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
-                  title="Download CSV"
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden md:inline">Export</span>
+                <button onClick={handleExportExcel} className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md">
+                  <Download className="w-4 h-4" /> <span className="hidden md:inline">Excel</span>
                 </button>
 
-                <button
-                  onClick={saveWeeklyReport}
-                  className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg hover:shadow-xl shadow-slate-900/20"
-                >
-                  <Save className="w-4 h-4" />
-                  <span className="hidden md:inline">Save</span>
+                <button onClick={saveWeeklyReport} className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-lg hover:shadow-xl shadow-slate-900/20">
+                  <Save className="w-4 h-4" /> <span className="hidden md:inline">Save</span>
                 </button>
               </div>
             </div>
@@ -456,62 +511,31 @@ const App = () => {
 
       <main className="max-w-[66%] mx-auto px-2 sm:px-4 lg:px-6 py-6 relative z-10">
         
-        {/* Executive Summary Cards */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-blue-300 transition-all duration-300">
-            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <Users className="w-16 h-16 text-slate-900" />
-            </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">Total Workers</p>
-              <h3 className="text-3xl font-black text-slate-900 mt-1 font-heading tracking-tight">{summary.totalWorkers}</h3>
-            </div>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-slate-800 h-full w-full opacity-30"></div>
-            </div>
+            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500"><Users className="w-16 h-16 text-slate-900" /></div>
+            <div><p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">Total Workers</p><h3 className="text-3xl font-black text-slate-900 mt-1 font-heading tracking-tight">{summary.totalWorkers}</h3></div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-auto"><div className="bg-slate-800 h-full w-full opacity-30"></div></div>
           </div>
-          
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-emerald-300 transition-all duration-300">
-             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <CheckCircle className="w-16 h-16 text-emerald-700" />
-            </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-emerald-700/90 uppercase tracking-widest">Completed</p>
-              <h3 className="text-3xl font-black text-emerald-700 mt-1 font-heading tracking-tight">{summary.completed}</h3>
-            </div>
-            <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-emerald-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.completed/summary.totalSlots)*100}%` : '0%' }}></div>
-            </div>
+             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500"><CheckCircle className="w-16 h-16 text-emerald-700" /></div>
+            <div><p className="text-[10px] font-extrabold text-emerald-700/90 uppercase tracking-widest">Completed</p><h3 className="text-3xl font-black text-emerald-700 mt-1 font-heading tracking-tight">{summary.completed}</h3></div>
+            <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden mt-auto"><div className="bg-emerald-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.completed/summary.totalSlots)*100}%` : '0%' }}></div></div>
           </div>
-
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-amber-300 transition-all duration-300">
-            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <Clock3 className="w-16 h-16 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-amber-700/90 uppercase tracking-widest">Waiting Action</p>
-              <h3 className="text-3xl font-black text-amber-600 mt-1 font-heading tracking-tight">{summary.waiting}</h3>
-            </div>
-             <div className="w-full bg-amber-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-amber-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.waiting/summary.totalSlots)*100}%` : '0%' }}></div>
-            </div>
+            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500"><Clock3 className="w-16 h-16 text-amber-600" /></div>
+            <div><p className="text-[10px] font-extrabold text-amber-700/90 uppercase tracking-widest">Waiting Action</p><h3 className="text-3xl font-black text-amber-600 mt-1 font-heading tracking-tight">{summary.waiting}</h3></div>
+             <div className="w-full bg-amber-100 h-1.5 rounded-full overflow-hidden mt-auto"><div className="bg-amber-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.waiting/summary.totalSlots)*100}%` : '0%' }}></div></div>
           </div>
-
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-rose-300 transition-all duration-300">
-            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <AlertCircle className="w-16 h-16 text-rose-600" />
-            </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-rose-700/90 uppercase tracking-widest">Critical Issues</p>
-              <h3 className="text-3xl font-black text-rose-600 mt-1 font-heading tracking-tight">{summary.issues}</h3>
-            </div>
-             <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-rose-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.issues/summary.totalSlots)*100}%` : '0%' }}></div>
-            </div>
+            <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500"><AlertCircle className="w-16 h-16 text-rose-600" /></div>
+            <div><p className="text-[10px] font-extrabold text-rose-700/90 uppercase tracking-widest">Critical Issues</p><h3 className="text-3xl font-black text-rose-600 mt-1 font-heading tracking-tight">{summary.issues}</h3></div>
+             <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden mt-auto"><div className="bg-rose-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.issues/summary.totalSlots)*100}%` : '0%' }}></div></div>
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Workers Table */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden mb-12 min-h-[400px]">
           {workers.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -520,10 +544,7 @@ const App = () => {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No Workers Found</h3>
               <p className="text-slate-600 max-w-sm mb-6 font-medium">Your worker list is currently empty. Use the Import button to add workers in bulk.</p>
-              <button 
-                onClick={() => setShowImportModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all text-sm"
-              >
+              <button onClick={() => setShowImportModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all text-sm">
                 Import Workers
               </button>
             </div>
@@ -567,23 +588,12 @@ const App = () => {
                               </div>
                             </div>
                             
-                            {/* Action Buttons Row */}
                             <div className="flex items-center gap-2 pl-12 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                                <button 
-                                  onClick={() => toggleHistory(worker.id)}
-                                  className="text-[9px] bg-white hover:bg-slate-100 text-slate-600 hover:text-blue-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 shadow-sm"
-                                >
-                                  <History className="w-3 h-3" />
-                                  {expandedWorkerId === worker.id ? 'Close' : 'Log'}
+                                <button onClick={() => toggleHistory(worker.id)} className="text-[9px] bg-white hover:bg-slate-100 text-slate-600 hover:text-blue-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 shadow-sm">
+                                  <History className="w-3 h-3" /> {expandedWorkerId === worker.id ? 'Close' : 'Log'}
                                 </button>
-                                
-                                <button
-                                  onClick={(e) => handleDeleteWorker(e, worker.id)}
-                                  className="text-[9px] bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 hover:border-rose-300 shadow-sm"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  Del
+                                <button onClick={(e) => handleDeleteWorker(e, worker.id)} className="text-[9px] bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 hover:border-rose-300 shadow-sm">
+                                  <Trash2 className="w-3 h-3" /> Del
                                 </button>
                             </div>
                           </div>
@@ -597,13 +607,9 @@ const App = () => {
                           return (
                             <td key={status.id} className="px-2 py-3 align-top">
                               <div className="flex flex-col gap-1.5">
-                                {/* Status Pill */}
                                 <div className="relative">
                                   <select
-                                    className={`
-                                      w-full appearance-none pl-2 pr-6 py-2 text-xs font-bold rounded-lg border shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all
-                                      ${getStatusColor(statusValue)}
-                                    `}
+                                    className={`w-full appearance-none pl-2 pr-6 py-2 text-xs font-bold rounded-lg border shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all ${getStatusColor(statusValue)}`}
                                     value={statusValue}
                                     onChange={(e) => updateStatus(worker.id, status.id, 'status', e.target.value as StatusType)}
                                   >
@@ -617,15 +623,11 @@ const App = () => {
                                   </div>
                                 </div>
 
-                                {/* Contextual Inputs */}
                                 <div className="min-h-[28px]">
                                   {statusValue === 'done' && (
                                     <div className="relative animate-in fade-in slide-in-from-top-1 duration-200">
-                                      {/* Specific label for Flight column arrival date */}
                                       {status.id === 'booking' && (
-                                        <label className="block text-[9px] font-bold text-slate-600 mb-0.5 ml-1">
-                                          Arrival (Insha'Allah)
-                                        </label>
+                                        <label className="block text-[9px] font-bold text-slate-600 mb-0.5 ml-1">Arrival (Insha'Allah)</label>
                                       )}
                                        <input
                                         type="date"
@@ -663,7 +665,7 @@ const App = () => {
                         })}
                       </tr>
                       
-                      {/* Expanded Audit Log */}
+                      {/* Audit Log (same as before) */}
                       {expandedWorkerId === worker.id && (
                         <tr className="animate-in fade-in duration-200">
                           <td colSpan={STATUS_COLUMNS.length + 2} className="bg-slate-50 px-8 py-8 border-b border-slate-200 shadow-inner">
@@ -678,9 +680,7 @@ const App = () => {
                               </div>
                               
                               {(!worker.history || worker.history.length === 0) ? (
-                                <div className="text-center py-10 text-slate-500 text-sm font-medium">
-                                  No activity recorded yet.
-                                </div>
+                                <div className="text-center py-10 text-slate-500 text-sm font-medium">No activity recorded yet.</div>
                               ) : (
                                 <div className="relative pl-3">
                                   <div className="absolute top-2 bottom-2 left-[20px] w-0.5 bg-slate-200"></div>
@@ -695,9 +695,7 @@ const App = () => {
                                               <span className="text-[10px] px-2.5 py-1 rounded-full bg-white border border-slate-300 text-slate-600 font-bold uppercase tracking-wide shadow-sm">{log.milestone}</span>
                                             </div>
                                             {log.note && (
-                                              <p className="text-sm text-slate-800 mt-2 bg-amber-50 border border-amber-200 p-3 rounded-xl font-medium inline-block shadow-sm">
-                                                "{log.note}"
-                                              </p>
+                                              <p className="text-sm text-slate-800 mt-2 bg-amber-50 border border-amber-200 p-3 rounded-xl font-medium inline-block shadow-sm">"{log.note}"</p>
                                             )}
                                           </div>
                                           <div className="text-right min-w-[140px]">
@@ -729,7 +727,7 @@ const App = () => {
           )}
         </div>
 
-        {/* Weekly Reports Archive */}
+        {/* Weekly Reports Archive with new OnClick handler */}
         {weeklyReports.length > 0 && (
           <div className="mt-16 border-t border-slate-300 pt-10">
             <h2 className="text-xl font-black text-slate-900 mb-8 font-heading flex items-center gap-2">
@@ -738,7 +736,11 @@ const App = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {weeklyReports.map((report, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-xl transition-all group cursor-pointer relative overflow-hidden shadow-sm">
+                <div 
+                  key={idx} 
+                  onClick={() => setSelectedReport(report)}
+                  className="bg-white p-6 rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-xl transition-all group cursor-pointer relative overflow-hidden shadow-sm"
+                >
                   <div className="flex justify-between items-start mb-5">
                     <div>
                       <h3 className="font-bold text-slate-900 font-heading text-base">{report.week}</h3>
@@ -760,7 +762,7 @@ const App = () => {
                     </div>
                     <div className="w-px h-8 bg-slate-200"></div>
                      <div className="flex flex-col items-center">
-                      <span className="font-black text-slate-800 text-xl leading-none">{report.workers ? report.workers.length : report.summary.totalTasks}</span>
+                      <span className="font-black text-slate-800 text-xl leading-none">{report.workers ? report.workers.length : 0}</span>
                       <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Workers</span>
                     </div>
                   </div>
@@ -771,52 +773,198 @@ const App = () => {
         )}
       </main>
 
+      {/* --- MODALS --- */}
+
       {/* Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-white/50 animate-in zoom-in-95 duration-200 overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
               <h3 className="text-lg font-bold text-slate-900 font-heading flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-700" />
-                Bulk Import Workers
+                <Upload className="w-5 h-5 text-blue-700" /> Bulk Import
               </h3>
-              <button 
-                onClick={() => setShowImportModal(false)}
-                className="text-slate-500 hover:text-slate-700 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-200 hover:border-slate-300"
-              >
+              <button onClick={() => setShowImportModal(false)} className="text-slate-500 hover:text-slate-700 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-200 hover:border-slate-300">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-xs font-medium text-blue-900 flex gap-3 leading-relaxed">
-                <AlertCircle className="w-5 h-5 shrink-0 text-blue-700" />
-                <p>Paste your list of worker names below (one name per line). This will append them to your current list.</p>
-              </div>
               <textarea
                 className="w-full h-48 p-4 bg-white border border-slate-300 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none text-sm font-bold text-slate-900 resize-none shadow-inner placeholder-slate-400"
-                placeholder="MARILYN GABRIEL&#10;FLORIDA PASION&#10;VICTORIA GUARDA BURCIA..."
+                placeholder="Paste names (one per line)..."
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
               />
             </div>
             <div className="p-6 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="px-5 py-2.5 text-slate-700 font-bold text-sm hover:text-slate-900 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBulkImport}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-0.5"
-                disabled={!importText.trim()}
-              >
-                Import Workers
-              </button>
+              <button onClick={() => setShowImportModal(false)} className="px-5 py-2.5 text-slate-700 font-bold text-sm hover:text-slate-900 transition-colors">Cancel</button>
+              <button onClick={handleBulkImport} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30 transition-all">Import</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* REPORT VIEWER MODAL */}
+      {selectedReport && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl border border-slate-200 animate-in zoom-in-95 duration-200 flex flex-col max-h-full">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 font-heading tracking-tight">Weekly Operational Report</h2>
+                <div className="flex items-center gap-2 text-slate-500 mt-2 text-sm font-bold">
+                  <Calendar className="w-4 h-4" /> {selectedReport.week}
+                  <span className="mx-1">•</span>
+                  <Clock3 className="w-4 h-4" /> Generated: {selectedReport.dateFormatted}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                 <button onClick={() => window.print()} className="p-2 bg-white text-slate-700 rounded-lg border border-slate-300 shadow-sm hover:bg-slate-100 print:hidden" title="Print Report">
+                  <Printer className="w-5 h-5" />
+                </button>
+                <button onClick={() => setSelectedReport(null)} className="p-2 bg-white text-slate-700 rounded-lg border border-slate-300 shadow-sm hover:bg-slate-100 print:hidden">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="p-8 overflow-y-auto custom-scrollbar bg-white print:p-0">
+              
+              {/* Executive Summary Section */}
+              <div className="mb-8">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 pb-2 mb-4">Executive Summary</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="text-xs font-bold text-slate-500 uppercase">Total Workers</div>
+                    <div className="text-2xl font-black text-slate-900">{selectedReport.summary.totalWorkers}</div>
+                  </div>
+                  <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100">
+                    <div className="text-xs font-bold text-emerald-700 uppercase">Completed</div>
+                    <div className="text-2xl font-black text-emerald-800">{selectedReport.summary.completed}</div>
+                  </div>
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
+                    <div className="text-xs font-bold text-amber-700 uppercase">Bottlenecks</div>
+                    <div className="text-2xl font-black text-amber-800">{selectedReport.summary.waiting}</div>
+                  </div>
+                  <div className="p-4 bg-rose-50 rounded-lg border border-rose-100">
+                    <div className="text-xs font-bold text-rose-700 uppercase">Critical Issues</div>
+                    <div className="text-2xl font-black text-rose-800">{selectedReport.summary.issues}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                {/* Upcoming Arrivals */}
+                <div className="col-span-1 md:col-span-2">
+                  <h3 className="text-sm font-black text-purple-900 uppercase tracking-widest border-b-2 border-purple-200 pb-2 mb-4 flex items-center gap-2">
+                    <Globe className="w-4 h-4" /> Upcoming Arrivals (Insha'Allah)
+                  </h3>
+                  {selectedReport.detailedStats?.upcomingArrivals.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {selectedReport.detailedStats.upcomingArrivals.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                          <span className="font-bold text-slate-900 text-sm">{item.workerName}</span>
+                          <span className="font-mono text-xs font-bold text-purple-700 bg-white px-2 py-1 rounded border border-purple-200">{item.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No scheduled arrivals found.</p>
+                  )}
+                </div>
+
+                {/* Recent Completions */}
+                <div>
+                  <h3 className="text-sm font-black text-emerald-900 uppercase tracking-widest border-b-2 border-emerald-200 pb-2 mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" /> Weekly Achievements
+                  </h3>
+                  {selectedReport.detailedStats?.recentCompletions.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedReport.detailedStats.recentCompletions.map((cat, i) => (
+                        <div key={i}>
+                          <div className="text-xs font-bold text-emerald-700 mb-1">{cat.categoryName}</div>
+                          <ul className="space-y-1">
+                            {cat.items.map((item, j) => (
+                              <li key={j} className="text-sm text-slate-700 flex justify-between border-b border-slate-100 py-1">
+                                <span>{item.workerName}</span>
+                                {item.detail && <span className="text-xs text-slate-400">{item.detail}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No major completions recorded in the last 7 days.</p>
+                  )}
+                </div>
+
+                {/* Operational Bottlenecks */}
+                <div>
+                   <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest border-b-2 border-amber-200 pb-2 mb-4 flex items-center gap-2">
+                    <Clock3 className="w-4 h-4" /> Operational Bottlenecks
+                  </h3>
+                   {selectedReport.detailedStats?.bottlenecks.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedReport.detailedStats.bottlenecks.map((cat, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between items-center mb-1">
+                             <div className="text-xs font-bold text-amber-700">{cat.categoryName}</div>
+                             <div className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 rounded-full">{cat.count}</div>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {cat.items.map((item, j) => (
+                              <span key={j} className="text-xs font-semibold bg-slate-50 text-slate-700 px-2 py-1 rounded border border-slate-200">
+                                {item.workerName}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No significant bottlenecks.</p>
+                  )}
+                </div>
+
+                 {/* Critical Issues */}
+                <div className="col-span-1 md:col-span-2">
+                   <h3 className="text-sm font-black text-rose-900 uppercase tracking-widest border-b-2 border-rose-200 pb-2 mb-4 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" /> Critical Issues Log
+                  </h3>
+                   {selectedReport.detailedStats?.criticalIssues.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedReport.detailedStats.criticalIssues.map((cat, i) => (
+                        cat.items.map((item, j) => (
+                           <div key={`${i}-${j}`} className="p-3 bg-rose-50 border border-rose-100 rounded-lg flex flex-col gap-1">
+                             <div className="flex justify-between">
+                               <span className="font-bold text-rose-900 text-sm">{item.workerName}</span>
+                               <span className="text-[10px] uppercase font-bold text-rose-500 bg-white px-1.5 rounded">{cat.categoryName}</span>
+                             </div>
+                             <p className="text-xs text-rose-800 italic">"{item.detail}"</p>
+                           </div>
+                        ))
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-800 text-sm font-bold flex items-center gap-2">
+                       <CheckCircle className="w-4 h-4" /> No critical issues reported.
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-slate-200 bg-slate-50 text-center text-[10px] text-slate-400 font-bold uppercase tracking-wider print:hidden">
+              System Generated Report • Confidential
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

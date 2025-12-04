@@ -1,5 +1,4 @@
 
-
 export type StatusType = 'select' | 'waiting' | 'done' | 'issue';
 
 export enum Milestone {
@@ -52,10 +51,32 @@ export interface WeeklyReportSummary {
   waiting: number;
 }
 
+// --- NEW REPORTING STRUCTURES ---
+
+export interface ReportItem {
+  workerName: string;
+  detail?: string; // e.g., the date, the note, or the specific issue
+  timestamp?: string;
+}
+
+export interface ReportCategory {
+  categoryName: string; // e.g., "Training", "OEC"
+  count: number;
+  items: ReportItem[];
+}
+
+export interface DetailedStats {
+  recentCompletions: ReportCategory[]; // Completed in the last 7 days
+  bottlenecks: ReportCategory[];       // Currently 'waiting'
+  criticalIssues: ReportCategory[];    // Currently 'issue'
+  upcomingArrivals: ReportItem[];      // Flight dates in future
+}
+
 export interface WeeklyReport {
   week: string;
   date: string;
   dateFormatted: string;
   workers: Worker[];
   summary: WeeklyReportSummary;
+  detailedStats: DetailedStats; // Added detailed stats
 }
