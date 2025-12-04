@@ -358,7 +358,7 @@ const App = () => {
       
       {/* Top Navigation Bar */}
       <nav className="bg-white/90 backdrop-blur-lg border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-[98%] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[66%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center py-2">
             {/* Logo Area */}
             <div className="flex items-center gap-3">
@@ -366,8 +366,8 @@ const App = () => {
                 <Globe className="text-white w-6 h-6" />
               </div>
               <div className="hidden md:block">
-                <h1 className="text-xl font-extrabold text-slate-900 font-heading leading-none tracking-tight">Operations<span className="text-blue-600">Hub</span></h1>
-                <p className="text-[11px] text-slate-600 font-bold tracking-widest uppercase mt-0.5 opacity-90">Global Worker Tracking</p>
+                <h1 className="text-xl font-extrabold text-slate-900 font-heading leading-none tracking-tight">UPDATES</h1>
+                <p className="text-[11px] text-slate-600 font-bold tracking-widest uppercase mt-0.5 opacity-90">Worker Tracking System</p>
               </div>
             </div>
 
@@ -426,7 +426,7 @@ const App = () => {
         </div>
       </nav>
 
-      <main className="max-w-[98%] mx-auto px-2 sm:px-4 lg:px-6 py-6 relative z-10">
+      <main className="max-w-[66%] mx-auto px-2 sm:px-4 lg:px-6 py-6 relative z-10">
         
         {/* Executive Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
