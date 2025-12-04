@@ -45,7 +45,8 @@ export interface Worker {
 }
 
 export interface WeeklyReportSummary {
-  totalTasks: number;
+  totalWorkers: number;
+  totalSlots: number;
   completed: number;
   issues: number;
   waiting: number;

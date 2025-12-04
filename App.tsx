@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, Lock, Save, FileText, History, User, Users, CheckCircle, AlertCircle, Clock3, LayoutDashboard, ChevronRight, ChevronDown, Activity, Globe, Shield, Trash2, Plus, Upload, X, MoreHorizontal, Download } from 'lucide-react';
 import { Worker, WeeklyReport, StatusType, UpdateLog } from './types';
@@ -44,8 +46,19 @@ const App = () => {
     try {
       const savedWorkers = localStorage.getItem('workers_data_v3');
       const savedReports = localStorage.getItem('weekly_reports_v3');
-      const savedAuth = sessionStorage.getItem('is_authenticated');
-      const savedUser = sessionStorage.getItem('current_user');
+      
+      // Auth Check with 4-hour expiry
+      const savedAuthSession = localStorage.getItem('auth_session');
+      if (savedAuthSession) {
+        const session = JSON.parse(savedAuthSession);
+        // Check if session is valid (less than 4 hours old)
+        if (session && session.expiry > Date.now()) {
+           setIsAuthenticated(true);
+           setCurrentUser(session.user);
+        } else {
+           localStorage.removeItem('auth_session'); // Expired
+        }
+      }
       
       if (savedWorkers) {
         setWorkers(JSON.parse(savedWorkers));
@@ -53,11 +66,6 @@ const App = () => {
 
       if (savedReports) {
         setWeeklyReports(JSON.parse(savedReports));
-      }
-
-      if (savedAuth === 'true' && savedUser) {
-        setIsAuthenticated(true);
-        setCurrentUser(savedUser);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -136,7 +144,8 @@ const App = () => {
   };
 
   const calculateSummary = () => {
-    let totalTasks = workers.length * STATUS_COLUMNS.length;
+    const totalWorkers = workers.length;
+    const totalSlots = workers.length * STATUS_COLUMNS.length;
     let completed = 0;
     let issues = 0;
     let waiting = 0;
@@ -150,20 +159,33 @@ const App = () => {
       });
     });
 
-    return { totalTasks, completed, issues, waiting };
+    return { totalWorkers, totalSlots, completed, issues, waiting };
   };
 
   const handleLogin = () => {
     if (password === 'admin123' && username.trim().length > 0) {
+      const user = username.trim();
       setIsAuthenticated(true);
-      setCurrentUser(username.trim());
-      sessionStorage.setItem('is_authenticated', 'true');
-      sessionStorage.setItem('current_user', username.trim());
+      setCurrentUser(user);
+      
+      // Save session for 4 hours (4 * 60 * 60 * 1000 ms)
+      const session = {
+        user: user,
+        expiry: Date.now() + (4 * 60 * 60 * 1000)
+      };
+      localStorage.setItem('auth_session', JSON.stringify(session));
+      
     } else if (username.trim().length === 0) {
       alert('Please enter your name for the audit trail.');
     } else {
       alert('Incorrect Password');
     }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser('');
+    localStorage.removeItem('auth_session');
   };
 
   const updateStatus = (workerId: number | string, statusId: string, field: 'status' | 'date' | 'note', value: string) => {
@@ -235,20 +257,26 @@ const App = () => {
     setShowImportModal(false);
   };
 
-  const handleDeleteWorker = (id: string | number) => {
-    if (confirm('Are you sure you want to remove this worker permanently?')) {
+  const handleDeleteWorker = (e: React.MouseEvent, id: string | number) => {
+    e.stopPropagation(); // Stop click from bubbling to row
+    const reason = prompt('Please enter a reason for deletion to confirm (e.g. "Wrong entry", "Duplicate"):');
+    
+    if (reason && reason.trim().length > 0) {
       const updatedWorkers = workers.filter(w => w.id !== id);
       setWorkers(updatedWorkers);
       saveData(updatedWorkers);
+      if (expandedWorkerId === id) setExpandedWorkerId(null);
     }
   };
 
   const handleClearAll = () => {
-    if (confirm('⚠️ WARNING: This will delete ALL workers.\n\nAre you sure you want to continue?')) {
-      if (confirm('Final confirmation: All data will be lost. This cannot be undone.')) {
-        setWorkers([]);
-        saveData([]);
-      }
+    const reason = prompt('⚠️ WARNING: This will delete ALL workers.\n\nTo confirm, please type "DELETE ALL" below:');
+    if (reason === 'DELETE ALL') {
+      setWorkers([]);
+      saveData([]);
+      setExpandedWorkerId(null);
+    } else if (reason) {
+      alert('Confirmation failed. You must type exactly "DELETE ALL" to clear the database.');
     }
   };
 
@@ -432,11 +460,11 @@ const App = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-blue-300 transition-all duration-300">
             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <LayoutDashboard className="w-16 h-16 text-slate-900" />
+              <Users className="w-16 h-16 text-slate-900" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">Total Tasks</p>
-              <h3 className="text-3xl font-black text-slate-900 mt-1 font-heading tracking-tight">{summary.totalTasks}</h3>
+              <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">Total Workers</p>
+              <h3 className="text-3xl font-black text-slate-900 mt-1 font-heading tracking-tight">{summary.totalWorkers}</h3>
             </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-auto">
                <div className="bg-slate-800 h-full w-full opacity-30"></div>
@@ -452,7 +480,7 @@ const App = () => {
               <h3 className="text-3xl font-black text-emerald-700 mt-1 font-heading tracking-tight">{summary.completed}</h3>
             </div>
             <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-emerald-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.completed/summary.totalTasks)*100}%` : '0%' }}></div>
+               <div className="bg-emerald-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.completed/summary.totalSlots)*100}%` : '0%' }}></div>
             </div>
           </div>
 
@@ -465,7 +493,7 @@ const App = () => {
               <h3 className="text-3xl font-black text-amber-600 mt-1 font-heading tracking-tight">{summary.waiting}</h3>
             </div>
              <div className="w-full bg-amber-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-amber-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.waiting/summary.totalTasks)*100}%` : '0%' }}></div>
+               <div className="bg-amber-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.waiting/summary.totalSlots)*100}%` : '0%' }}></div>
             </div>
           </div>
 
@@ -478,7 +506,7 @@ const App = () => {
               <h3 className="text-3xl font-black text-rose-600 mt-1 font-heading tracking-tight">{summary.issues}</h3>
             </div>
              <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden mt-auto">
-               <div className="bg-rose-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.issues/summary.totalTasks)*100}%` : '0%' }}></div>
+               <div className="bg-rose-600 h-full transition-all duration-1000" style={{ width: summary.totalSlots > 0 ? `${(summary.issues/summary.totalSlots)*100}%` : '0%' }}></div>
             </div>
           </div>
         </div>
@@ -516,7 +544,7 @@ const App = () => {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y-2 divide-slate-300">
                   {workers.map((worker, index) => (
                     <React.Fragment key={worker.id}>
                       <tr className={`group transition-all duration-200 ${expandedWorkerId === worker.id ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
@@ -550,7 +578,7 @@ const App = () => {
                                 </button>
                                 
                                 <button
-                                  onClick={() => handleDeleteWorker(worker.id)}
+                                  onClick={(e) => handleDeleteWorker(e, worker.id)}
                                   className="text-[9px] bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 hover:border-rose-300 shadow-sm"
                                   title="Delete"
                                 >
@@ -732,8 +760,8 @@ const App = () => {
                     </div>
                     <div className="w-px h-8 bg-slate-200"></div>
                      <div className="flex flex-col items-center">
-                      <span className="font-black text-slate-800 text-xl leading-none">{report.summary.totalTasks}</span>
-                      <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Total</span>
+                      <span className="font-black text-slate-800 text-xl leading-none">{report.workers ? report.workers.length : report.summary.totalTasks}</span>
+                      <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Workers</span>
                     </div>
                   </div>
                 </div>
