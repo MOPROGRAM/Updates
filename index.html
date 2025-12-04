@@ -7,34 +7,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc; /* Slate-50 */
-        color: #0f172a; /* Slate-900 */
+        color: #020617; /* Slate-950 - Darker for better contrast */
       }
       h1, h2, h3, h4, h5, h6, .font-heading {
         font-family: 'Plus Jakarta Sans', sans-serif;
       }
       /* Custom Scrollbar */
       .custom-scrollbar::-webkit-scrollbar {
-        height: 6px;
-        width: 6px;
+        height: 8px; /* Slightly thicker for visibility */
+        width: 8px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
+        background: #f1f5f9;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
+        background: #94a3b8;
         border-radius: 4px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        background: #64748b;
       }
-      /* Hide date picker icon in some browsers to keep it clean if needed, 
-         but usually better to keep it for usability. 
-         We'll just style the input itself in Tailwind. */
     </style>
   <script type="importmap">
 {
@@ -50,6 +47,7 @@
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <!-- Changed to relative path for GitHub Pages compatibility -->
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

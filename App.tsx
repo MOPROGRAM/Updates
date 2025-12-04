@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, Lock, Save, FileText, History, User, Users, CheckCircle, AlertCircle, Clock3, LayoutDashboard, ChevronRight, ChevronDown, Activity, Globe, Shield, Trash2, Plus, Upload, X, MoreHorizontal, Download } from 'lucide-react';
 import { Worker, WeeklyReport, StatusType, UpdateLog } from './types';
@@ -264,10 +262,10 @@ const App = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'done': return 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold';
-      case 'waiting': return 'bg-amber-50 text-amber-800 border-amber-300 font-bold';
-      case 'issue': return 'bg-rose-50 text-rose-800 border-rose-300 font-bold';
-      default: return 'bg-white text-slate-600 border-slate-300 font-medium';
+      case 'done': return 'bg-emerald-50 text-emerald-900 border-emerald-400 font-bold';
+      case 'waiting': return 'bg-amber-50 text-amber-900 border-amber-400 font-bold';
+      case 'issue': return 'bg-rose-50 text-rose-900 border-rose-400 font-bold';
+      default: return 'bg-white text-slate-900 border-slate-300 font-bold';
     }
   };
 
@@ -276,7 +274,7 @@ const App = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <div className="text-slate-500 font-medium animate-pulse">Initializing System...</div>
+          <div className="text-slate-700 font-bold animate-pulse">Initializing System...</div>
         </div>
       </div>
     );
@@ -292,24 +290,24 @@ const App = () => {
            <div className="absolute -bottom-20 left-20 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-[420px] border border-white/50 relative z-10">
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-[420px] border border-white/50 relative z-10">
           <div className="text-center mb-8">
             <div className="inline-flex p-3 rounded-2xl bg-blue-600 shadow-lg shadow-blue-500/30 mb-5">
               <Shield className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 font-heading">Secure Portal</h1>
-            <p className="text-slate-500 mt-2 text-sm">Log in to manage worker documentation.</p>
+            <h1 className="text-2xl font-black text-slate-900 font-heading">Secure Portal</h1>
+            <p className="text-slate-600 mt-2 text-sm font-medium">Log in to manage worker documentation.</p>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 ml-1">Operator Name</label>
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 ml-1">Operator Name</label>
               <div className="relative">
-                <User className="absolute left-3 top-3.5 text-slate-500 w-4 h-4" />
+                <User className="absolute left-3 top-3.5 text-slate-600 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="e.g. John Doe"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm font-semibold text-slate-900"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm font-bold text-slate-900 placeholder-slate-500"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -317,13 +315,13 @@ const App = () => {
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 ml-1">Password</label>
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 ml-1">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3.5 text-slate-500 w-4 h-4" />
+                <Lock className="absolute left-3 top-3.5 text-slate-600 w-4 h-4" />
                 <input
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm font-semibold text-slate-900"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition text-sm font-bold text-slate-900 placeholder-slate-500"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
@@ -340,7 +338,7 @@ const App = () => {
           </div>
         </div>
         
-        <div className="absolute bottom-6 text-center text-xs text-slate-500 font-semibold">
+        <div className="absolute bottom-6 text-center text-xs text-slate-600 font-bold">
           &copy; 2025 Worker Tracking System v3.0
         </div>
       </div>
@@ -369,19 +367,19 @@ const App = () => {
               </div>
               <div className="hidden md:block">
                 <h1 className="text-xl font-extrabold text-slate-900 font-heading leading-none tracking-tight">Operations<span className="text-blue-600">Hub</span></h1>
-                <p className="text-[11px] text-slate-500 font-bold tracking-widest uppercase mt-0.5 opacity-80">Global Worker Tracking</p>
+                <p className="text-[11px] text-slate-600 font-bold tracking-widest uppercase mt-0.5 opacity-90">Global Worker Tracking</p>
               </div>
             </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-4">
               <div className="hidden lg:flex items-center bg-slate-50/80 rounded-full px-1.5 py-1.5 border border-slate-200/60 shadow-inner">
-                <div className="px-3 py-1.5 bg-white rounded-full shadow-sm text-xs font-bold text-slate-700 flex items-center gap-2 border border-slate-100">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <div className="px-3 py-1.5 bg-white rounded-full shadow-sm text-xs font-bold text-slate-800 flex items-center gap-2 border border-slate-100">
+                  <Calendar className="w-3.5 h-3.5 text-blue-700" />
                   {currentWeek}
                 </div>
-                <div className="px-3 py-1.5 text-xs font-bold text-slate-600 flex items-center gap-2">
-                  <User className="w-3.5 h-3.5" />
+                <div className="px-3 py-1.5 text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-slate-600" />
                   {currentUser}
                 </div>
               </div>
@@ -391,7 +389,7 @@ const App = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleClearAll}
-                  className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-sm font-bold transition border border-rose-200 hover:border-rose-300"
+                  className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-2 rounded-lg text-sm font-bold transition border border-rose-200 hover:border-rose-300"
                   title="Delete All Workers"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -400,7 +398,7 @@ const App = () => {
 
                 <button
                   onClick={() => setShowImportModal(true)}
-                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
+                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                   <span className="hidden md:inline">Add</span>
@@ -408,7 +406,7 @@ const App = () => {
                 
                 <button
                   onClick={handleDownloadReport}
-                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
+                  className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-800 px-3 py-2 rounded-lg text-sm font-bold transition border border-slate-200 shadow-sm hover:shadow-md"
                   title="Download CSV"
                 >
                   <Download className="w-4 h-4" />
@@ -432,68 +430,68 @@ const App = () => {
         
         {/* Executive Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-blue-200 transition-all duration-300">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-blue-300 transition-all duration-300">
             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
               <LayoutDashboard className="w-16 h-16 text-slate-900" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Total Tasks</p>
+              <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-widest">Total Tasks</p>
               <h3 className="text-3xl font-black text-slate-900 mt-1 font-heading tracking-tight">{summary.totalTasks}</h3>
             </div>
-            <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-auto">
-               <div className="bg-slate-800 h-full w-full opacity-20"></div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-auto">
+               <div className="bg-slate-800 h-full w-full opacity-30"></div>
             </div>
           </div>
           
-          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-emerald-200 transition-all duration-300">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-emerald-300 transition-all duration-300">
              <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <CheckCircle className="w-16 h-16 text-emerald-600" />
+              <CheckCircle className="w-16 h-16 text-emerald-700" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold text-emerald-600/80 uppercase tracking-widest">Completed</p>
-              <h3 className="text-3xl font-black text-emerald-600 mt-1 font-heading tracking-tight">{summary.completed}</h3>
+              <p className="text-[10px] font-extrabold text-emerald-700/90 uppercase tracking-widest">Completed</p>
+              <h3 className="text-3xl font-black text-emerald-700 mt-1 font-heading tracking-tight">{summary.completed}</h3>
             </div>
-            <div className="w-full bg-emerald-100 h-1 rounded-full overflow-hidden mt-auto">
-               <div className="bg-emerald-500 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.completed/summary.totalTasks)*100}%` : '0%' }}></div>
+            <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden mt-auto">
+               <div className="bg-emerald-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.completed/summary.totalTasks)*100}%` : '0%' }}></div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-amber-200 transition-all duration-300">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-amber-300 transition-all duration-300">
             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <Clock3 className="w-16 h-16 text-amber-500" />
+              <Clock3 className="w-16 h-16 text-amber-600" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold text-amber-600/80 uppercase tracking-widest">Waiting Action</p>
-              <h3 className="text-3xl font-black text-amber-500 mt-1 font-heading tracking-tight">{summary.waiting}</h3>
+              <p className="text-[10px] font-extrabold text-amber-700/90 uppercase tracking-widest">Waiting Action</p>
+              <h3 className="text-3xl font-black text-amber-600 mt-1 font-heading tracking-tight">{summary.waiting}</h3>
             </div>
-             <div className="w-full bg-amber-100 h-1 rounded-full overflow-hidden mt-auto">
-               <div className="bg-amber-500 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.waiting/summary.totalTasks)*100}%` : '0%' }}></div>
+             <div className="w-full bg-amber-100 h-1.5 rounded-full overflow-hidden mt-auto">
+               <div className="bg-amber-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.waiting/summary.totalTasks)*100}%` : '0%' }}></div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-rose-200 transition-all duration-300">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col justify-between h-28 relative overflow-hidden group hover:shadow-2xl hover:border-rose-300 transition-all duration-300">
             <div className="absolute right-0 top-0 p-3 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-              <AlertCircle className="w-16 h-16 text-rose-500" />
+              <AlertCircle className="w-16 h-16 text-rose-600" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold text-rose-600/80 uppercase tracking-widest">Critical Issues</p>
-              <h3 className="text-3xl font-black text-rose-500 mt-1 font-heading tracking-tight">{summary.issues}</h3>
+              <p className="text-[10px] font-extrabold text-rose-700/90 uppercase tracking-widest">Critical Issues</p>
+              <h3 className="text-3xl font-black text-rose-600 mt-1 font-heading tracking-tight">{summary.issues}</h3>
             </div>
-             <div className="w-full bg-rose-100 h-1 rounded-full overflow-hidden mt-auto">
-               <div className="bg-rose-500 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.issues/summary.totalTasks)*100}%` : '0%' }}></div>
+             <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden mt-auto">
+               <div className="bg-rose-600 h-full transition-all duration-1000" style={{ width: summary.totalTasks > 0 ? `${(summary.issues/summary.totalTasks)*100}%` : '0%' }}></div>
             </div>
           </div>
         </div>
 
         {/* Data Table */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden mb-12 min-h-[400px]">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden mb-12 min-h-[400px]">
           {workers.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-96 text-center">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border-2 border-slate-100 shadow-inner">
-                <Users className="w-10 h-10 text-slate-300" />
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border-2 border-slate-200 shadow-inner">
+                <Users className="w-10 h-10 text-slate-400" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No Workers Found</h3>
-              <p className="text-slate-500 max-w-sm mb-6 font-medium">Your worker list is currently empty. Use the Import button to add workers in bulk.</p>
+              <p className="text-slate-600 max-w-sm mb-6 font-medium">Your worker list is currently empty. Use the Import button to add workers in bulk.</p>
               <button 
                 onClick={() => setShowImportModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all text-sm"
@@ -505,13 +503,13 @@ const App = () => {
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-500 font-extrabold font-heading backdrop-blur-sm">
+                  <tr className="bg-slate-100 border-b border-slate-200 text-[10px] uppercase tracking-wider text-slate-700 font-extrabold font-heading">
                     <th className="px-3 py-4 w-12 text-center">#</th>
                     <th className="px-3 py-4 min-w-[220px]">Worker Profile & Actions</th>
                     {STATUS_COLUMNS.map(col => (
                       <th key={col.id} className="px-2 py-4 min-w-[180px]">
                         <div className="flex items-center gap-1.5 justify-center">
-                          <span className="opacity-70 text-base filter grayscale hover:grayscale-0 transition-all">{col.icon}</span>
+                          <span className="opacity-100 text-base">{col.icon}</span>
                           {col.label}
                         </div>
                       </th>
@@ -523,18 +521,18 @@ const App = () => {
                     <React.Fragment key={worker.id}>
                       <tr className={`group transition-all duration-200 ${expandedWorkerId === worker.id ? 'bg-blue-50/50' : 'hover:bg-slate-50'}`}>
                         <td className="px-3 py-3 text-center align-top pt-5">
-                           <span className="font-mono text-xs font-bold text-slate-300 group-hover:text-slate-500 transition-colors">{(index + 1).toString().padStart(2, '0')}</span>
+                           <span className="font-mono text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">{(index + 1).toString().padStart(2, '0')}</span>
                         </td>
                         <td className="px-3 py-3 align-top">
                           <div className="flex flex-col gap-2 pt-1">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white flex-shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-md ring-2 ring-white flex-shrink-0">
                                 {worker.name.charAt(0)}
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-slate-800 text-sm leading-tight group-hover:text-blue-700 transition-colors truncate">{worker.name}</span>
+                                <span className="font-bold text-slate-900 text-sm leading-tight group-hover:text-blue-800 transition-colors truncate">{worker.name}</span>
                                 {worker.isRec && (
-                                  <span className="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-block w-fit mt-1 tracking-tight shadow-sm">
+                                  <span className="bg-blue-100 text-blue-800 border border-blue-200 text-[9px] font-bold px-1.5 py-0.5 rounded-full inline-block w-fit mt-1 tracking-tight shadow-sm">
                                     RECOMMENDED
                                   </span>
                                 )}
@@ -545,7 +543,7 @@ const App = () => {
                             <div className="flex items-center gap-2 pl-12 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
                                 <button 
                                   onClick={() => toggleHistory(worker.id)}
-                                  className="text-[9px] bg-white hover:bg-slate-50 text-slate-500 hover:text-blue-600 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-200 shadow-sm"
+                                  className="text-[9px] bg-white hover:bg-slate-100 text-slate-600 hover:text-blue-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 shadow-sm"
                                 >
                                   <History className="w-3 h-3" />
                                   {expandedWorkerId === worker.id ? 'Close' : 'Log'}
@@ -553,7 +551,7 @@ const App = () => {
                                 
                                 <button
                                   onClick={() => handleDeleteWorker(worker.id)}
-                                  className="text-[9px] bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-200 hover:border-rose-200 shadow-sm"
+                                  className="text-[9px] bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-700 px-2 py-1 rounded-full transition-colors font-bold flex items-center gap-1 border border-slate-300 hover:border-rose-300 shadow-sm"
                                   title="Delete"
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -575,16 +573,16 @@ const App = () => {
                                 <div className="relative">
                                   <select
                                     className={`
-                                      w-full appearance-none pl-2 pr-6 py-2 text-xs font-bold rounded-lg border shadow-sm outline-none focus:ring-2 focus:ring-blue-500/10 cursor-pointer transition-all
+                                      w-full appearance-none pl-2 pr-6 py-2 text-xs font-bold rounded-lg border shadow-sm outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all
                                       ${getStatusColor(statusValue)}
                                     `}
                                     value={statusValue}
                                     onChange={(e) => updateStatus(worker.id, status.id, 'status', e.target.value as StatusType)}
                                   >
-                                    <option value="select" className="text-slate-400 font-medium">Select...</option>
-                                    <option value="waiting" className="text-amber-700 font-bold">⏳ Waiting</option>
-                                    <option value="done" className="text-emerald-700 font-bold">✓ Done</option>
-                                    <option value="issue" className="text-rose-700 font-bold">⚠ Issue</option>
+                                    <option value="select" className="text-slate-600 font-bold">Select...</option>
+                                    <option value="waiting" className="text-amber-800 font-bold">⏳ Waiting</option>
+                                    <option value="done" className="text-emerald-800 font-bold">✓ Done</option>
+                                    <option value="issue" className="text-rose-800 font-bold">⚠ Issue</option>
                                   </select>
                                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-current opacity-60">
                                     <ChevronDown className="h-3 w-3 stroke-[3]" />
@@ -597,13 +595,13 @@ const App = () => {
                                     <div className="relative animate-in fade-in slide-in-from-top-1 duration-200">
                                       {/* Specific label for Flight column arrival date */}
                                       {status.id === 'booking' && (
-                                        <label className="block text-[9px] font-bold text-slate-500 mb-0.5 ml-1">
+                                        <label className="block text-[9px] font-bold text-slate-600 mb-0.5 ml-1">
                                           Arrival (Insha'Allah)
                                         </label>
                                       )}
                                        <input
                                         type="date"
-                                        className="w-full text-[10px] font-bold bg-emerald-50/50 border border-emerald-200 rounded px-2 py-1.5 text-emerald-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none shadow-sm"
+                                        className="w-full text-[10px] font-bold bg-emerald-50 border border-emerald-300 rounded px-2 py-1.5 text-emerald-950 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none shadow-sm placeholder-emerald-700"
                                         value={statusData.date || ''}
                                         onChange={(e) => updateStatus(worker.id, status.id, 'date', e.target.value)}
                                       />
@@ -614,7 +612,7 @@ const App = () => {
                                     <div className="relative animate-in fade-in slide-in-from-top-1 duration-200">
                                       <input
                                         type="text"
-                                        className="w-full text-[10px] font-semibold bg-rose-50/50 border border-rose-200 rounded px-2 py-1.5 text-rose-900 placeholder-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 outline-none shadow-sm"
+                                        className="w-full text-[10px] font-semibold bg-rose-50 border border-rose-300 rounded px-2 py-1.5 text-rose-950 placeholder-rose-700 focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none shadow-sm"
                                         value={statusData.note || ''}
                                         onChange={(e) => updateStatus(worker.id, status.id, 'note', e.target.value)}
                                         placeholder="Issue details..."
@@ -624,8 +622,8 @@ const App = () => {
                                   
                                   {statusData.updatedBy && statusValue !== 'select' && (
                                      <div className="flex items-center justify-end gap-1 mt-1">
-                                        <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate max-w-[80px]">
+                                        <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest truncate max-w-[80px]">
                                           {statusData.updatedBy}
                                         </span>
                                      </div>
@@ -640,46 +638,46 @@ const App = () => {
                       {/* Expanded Audit Log */}
                       {expandedWorkerId === worker.id && (
                         <tr className="animate-in fade-in duration-200">
-                          <td colSpan={STATUS_COLUMNS.length + 2} className="bg-slate-50/50 px-8 py-8 border-b border-slate-200 shadow-inner">
-                            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-6 max-w-4xl mx-auto relative overflow-hidden">
-                              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+                          <td colSpan={STATUS_COLUMNS.length + 2} className="bg-slate-50 px-8 py-8 border-b border-slate-200 shadow-inner">
+                            <div className="bg-white rounded-2xl border border-slate-300 shadow-xl shadow-slate-200/50 p-6 max-w-4xl mx-auto relative overflow-hidden">
+                              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
                               <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
                                 <h4 className="text-sm font-extrabold text-slate-900 font-heading flex items-center gap-2 uppercase tracking-wide">
-                                  <Activity className="w-5 h-5 text-blue-600" />
+                                  <Activity className="w-5 h-5 text-blue-700" />
                                   Audit Trail for {worker.name}
                                 </h4>
-                                <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-bold">REF: {worker.id}</span>
+                                <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-300 font-bold">REF: {worker.id}</span>
                               </div>
                               
                               {(!worker.history || worker.history.length === 0) ? (
-                                <div className="text-center py-10 text-slate-400 text-sm font-medium">
+                                <div className="text-center py-10 text-slate-500 text-sm font-medium">
                                   No activity recorded yet.
                                 </div>
                               ) : (
                                 <div className="relative pl-3">
-                                  <div className="absolute top-2 bottom-2 left-[20px] w-0.5 bg-slate-100"></div>
+                                  <div className="absolute top-2 bottom-2 left-[20px] w-0.5 bg-slate-200"></div>
                                   <div className="space-y-6">
                                     {worker.history.map((log, idx) => (
                                       <div key={idx} className="relative pl-12 group">
-                                        <div className="absolute left-[13.5px] top-4 w-3.5 h-3.5 rounded-full bg-white border-[3px] border-slate-200 group-hover:border-blue-500 transition-colors z-10 shadow-sm"></div>
-                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/20 transition-all shadow-sm hover:shadow-md">
+                                        <div className="absolute left-[13.5px] top-4 w-3.5 h-3.5 rounded-full bg-white border-[3px] border-slate-300 group-hover:border-blue-600 transition-colors z-10 shadow-sm"></div>
+                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all shadow-sm hover:shadow-md">
                                           <div>
                                             <div className="flex items-center gap-3 mb-2">
-                                              <span className="text-sm font-bold text-slate-800">{log.action}</span>
-                                              <span className="text-[10px] px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-500 font-bold uppercase tracking-wide shadow-sm">{log.milestone}</span>
+                                              <span className="text-sm font-bold text-slate-900">{log.action}</span>
+                                              <span className="text-[10px] px-2.5 py-1 rounded-full bg-white border border-slate-300 text-slate-600 font-bold uppercase tracking-wide shadow-sm">{log.milestone}</span>
                                             </div>
                                             {log.note && (
-                                              <p className="text-sm text-slate-700 mt-2 bg-amber-50 border border-amber-100 p-3 rounded-xl font-medium inline-block shadow-sm">
+                                              <p className="text-sm text-slate-800 mt-2 bg-amber-50 border border-amber-200 p-3 rounded-xl font-medium inline-block shadow-sm">
                                                 "{log.note}"
                                               </p>
                                             )}
                                           </div>
                                           <div className="text-right min-w-[140px]">
-                                            <div className="flex items-center justify-end gap-2 text-xs font-bold text-slate-700">
-                                              <div className="bg-slate-200 p-1 rounded-full"><User className="w-3 h-3 text-slate-500" /></div>
+                                            <div className="flex items-center justify-end gap-2 text-xs font-bold text-slate-800">
+                                              <div className="bg-slate-200 p-1 rounded-full"><User className="w-3 h-3 text-slate-600" /></div>
                                               {log.user}
                                             </div>
-                                            <p className="text-[10px] text-slate-400 mt-1.5 font-bold uppercase tracking-wider">
+                                            <p className="text-[10px] text-slate-500 mt-1.5 font-bold uppercase tracking-wider">
                                               {new Date(log.timestamp).toLocaleString(undefined, {
                                                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                                               })}
@@ -705,9 +703,9 @@ const App = () => {
 
         {/* Weekly Reports Archive */}
         {weeklyReports.length > 0 && (
-          <div className="mt-16 border-t border-slate-200 pt-10">
+          <div className="mt-16 border-t border-slate-300 pt-10">
             <h2 className="text-xl font-black text-slate-900 mb-8 font-heading flex items-center gap-2">
-              <FileText className="w-6 h-6 text-slate-400" />
+              <FileText className="w-6 h-6 text-slate-500" />
               Report Archive
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -716,26 +714,26 @@ const App = () => {
                   <div className="flex justify-between items-start mb-5">
                     <div>
                       <h3 className="font-bold text-slate-900 font-heading text-base">{report.week}</h3>
-                      <p className="text-xs text-slate-500 mt-1 font-bold">{report.dateFormatted}</p>
+                      <p className="text-xs text-slate-600 mt-1 font-bold">{report.dateFormatted}</p>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 group-hover:bg-blue-50 transition-colors border border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 group-hover:text-blue-700 group-hover:bg-blue-50 transition-colors border border-slate-200">
                       <ChevronRight className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between text-xs pt-5 border-t border-slate-50">
+                  <div className="flex items-center justify-between text-xs pt-5 border-t border-slate-100">
                     <div className="flex flex-col items-center">
-                      <span className="font-black text-emerald-600 text-xl leading-none">{report.summary.completed}</span>
-                      <span className="text-slate-400 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Done</span>
+                      <span className="font-black text-emerald-700 text-xl leading-none">{report.summary.completed}</span>
+                      <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Done</span>
                     </div>
-                    <div className="w-px h-8 bg-slate-100"></div>
+                    <div className="w-px h-8 bg-slate-200"></div>
                      <div className="flex flex-col items-center">
-                      <span className="font-black text-rose-500 text-xl leading-none">{report.summary.issues}</span>
-                      <span className="text-slate-400 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Issues</span>
+                      <span className="font-black text-rose-600 text-xl leading-none">{report.summary.issues}</span>
+                      <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Issues</span>
                     </div>
-                    <div className="w-px h-8 bg-slate-100"></div>
+                    <div className="w-px h-8 bg-slate-200"></div>
                      <div className="flex flex-col items-center">
-                      <span className="font-black text-slate-700 text-xl leading-none">{report.summary.totalTasks}</span>
-                      <span className="text-slate-400 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Total</span>
+                      <span className="font-black text-slate-800 text-xl leading-none">{report.summary.totalTasks}</span>
+                      <span className="text-slate-500 text-[10px] mt-1.5 font-bold uppercase tracking-wider">Total</span>
                     </div>
                   </div>
                 </div>
@@ -747,36 +745,36 @@ const App = () => {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-white/50 animate-in zoom-in-95 duration-200 overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
               <h3 className="text-lg font-bold text-slate-900 font-heading flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-600" />
+                <Upload className="w-5 h-5 text-blue-700" />
                 Bulk Import Workers
               </h3>
               <button 
                 onClick={() => setShowImportModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-200 hover:border-slate-300"
+                className="text-slate-500 hover:text-slate-700 transition-colors bg-white p-2 rounded-full shadow-sm border border-slate-200 hover:border-slate-300"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="p-6">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5 text-xs font-medium text-blue-800 flex gap-3 leading-relaxed">
-                <AlertCircle className="w-5 h-5 shrink-0 text-blue-600" />
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-xs font-medium text-blue-900 flex gap-3 leading-relaxed">
+                <AlertCircle className="w-5 h-5 shrink-0 text-blue-700" />
                 <p>Paste your list of worker names below (one name per line). This will append them to your current list.</p>
               </div>
               <textarea
-                className="w-full h-48 p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-sm font-semibold text-slate-800 resize-none shadow-inner"
+                className="w-full h-48 p-4 bg-white border border-slate-300 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none text-sm font-bold text-slate-900 resize-none shadow-inner placeholder-slate-400"
                 placeholder="MARILYN GABRIEL&#10;FLORIDA PASION&#10;VICTORIA GUARDA BURCIA..."
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
               />
             </div>
-            <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50">
+            <div className="p-6 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
               <button
                 onClick={() => setShowImportModal(false)}
-                className="px-5 py-2.5 text-slate-600 font-bold text-sm hover:text-slate-900 transition-colors"
+                className="px-5 py-2.5 text-slate-700 font-bold text-sm hover:text-slate-900 transition-colors"
               >
                 Cancel
               </button>
