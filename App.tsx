@@ -37,6 +37,12 @@ const StatusCell = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // Trigger onBlur to save
+    }
+  };
+
   const statusValue = (data.status as string) === 'pending' ? 'select' : (data.status || 'select');
 
   return (
@@ -73,6 +79,7 @@ const StatusCell = ({
                 }`}
               value={localDate}
               onChange={(e) => setLocalDate(e.target.value)}
+              onKeyDown={handleKeyDown}
               onBlur={() => {
                 if (localDate !== data.date) onUpdate('date', localDate);
               }}
@@ -88,6 +95,7 @@ const StatusCell = ({
               className="w-full text-[10px] font-semibold bg-white border border-slate-300 rounded px-2 py-1.5 text-slate-700 placeholder-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none shadow-sm"
               value={localNote}
               onChange={(e) => setLocalNote(e.target.value)}
+              onKeyDown={handleKeyDown}
               onBlur={() => {
                  // Only save if changed and length is sufficient to avoid empty spam
                  if (localNote !== data.note) onUpdate('note', localNote);
@@ -213,7 +221,7 @@ const App = () => {
     }
   };
 
-  // --- ANALYTICS ENGINE (Same as before) ---
+  // --- ANALYTICS ENGINE ---
   const generateDetailedStats = (currentWorkers: Worker[]): DetailedStats => {
     const stats: DetailedStats = {
       recentCompletions: [],
@@ -441,6 +449,12 @@ const App = () => {
       if (worker.id === workerId) {
         const currentStatusData = worker.statuses[statusId] || { status: 'select' };
         
+        // CHECK: Don't log if values are identical (prevent spam)
+        const oldValue = currentStatusData[field];
+        if (oldValue === value) {
+            return worker; // No change, no update, no log
+        }
+        
         const newStatusData = {
           ...currentStatusData,
           [field]: value,
@@ -449,7 +463,6 @@ const App = () => {
         };
 
         let newHistory = [...(worker.history || [])];
-        // Only log if status changed or note/date changed significantly (avoid spam handled by component, but double check)
         const statusLabel = STATUS_COLUMNS.find(c => c.id === statusId)?.label || statusId;
         
         const logEntry: UpdateLog = {
@@ -475,6 +488,20 @@ const App = () => {
     });
     setWorkers(newWorkers);
     saveData(newWorkers);
+  };
+  
+  const deleteHistoryLog = (workerId: string | number, logId: string) => {
+      const newWorkers = workers.map(w => {
+          if (w.id === workerId) {
+              return {
+                  ...w,
+                  history: w.history.filter(log => log.id !== logId)
+              }
+          }
+          return w;
+      });
+      setWorkers(newWorkers);
+      saveData(newWorkers);
   };
 
   // ... (Bulk Import, Delete, Clear All logic remains same as previous, just compacted)
@@ -731,15 +758,22 @@ const App = () => {
                                <h4 className="text-xs font-bold uppercase text-slate-500 mb-4 flex items-center gap-2"><Activity className="w-4 h-4" /> Audit Trail</h4>
                                <div className="space-y-3">
                                   {worker.history?.map((log, i) => (
-                                      <div key={i} className="flex gap-4 text-sm bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                                          <div className="font-bold text-slate-700 min-w-[120px]">{new Date(log.timestamp).toLocaleString()}</div>
-                                          <div className="font-bold text-blue-600 min-w-[100px]">{log.user}</div>
-                                          <div className="flex-1">
+                                      <div key={log.id} className="flex gap-4 text-sm bg-white p-3 rounded-lg border border-slate-200 shadow-sm items-start">
+                                          <div className="font-bold text-slate-700 min-w-[120px] pt-0.5">{new Date(log.timestamp).toLocaleString()}</div>
+                                          <div className="font-bold text-blue-600 min-w-[100px] pt-0.5">{log.user}</div>
+                                          <div className="flex-1 pt-0.5">
                                               <span className="font-bold text-slate-900">{log.action}</span>
                                               <span className="mx-2 text-slate-300">|</span>
                                               <span className="text-slate-500 font-semibold">{log.milestone}</span>
                                               {log.note && <div className="mt-1 text-slate-600 italic bg-slate-50 p-1.5 rounded">"{log.note}"</div>}
                                           </div>
+                                          <button 
+                                            onClick={() => deleteHistoryLog(worker.id, log.id)}
+                                            className="text-slate-300 hover:text-rose-600 transition-colors p-1"
+                                            title="Delete log entry"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
                                       </div>
                                   ))}
                                   {(!worker.history || worker.history.length === 0) && <div className="text-slate-400 italic">No history.</div>}
