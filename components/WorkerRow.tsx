@@ -14,9 +14,12 @@ export const WorkerRow: React.FC<WorkerRowProps> = ({ worker, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   
   // Safe access for optional fields
-  const currentStatus = worker.currentStatus || Milestone.Training;
   const history = worker.history || [];
-  const lastUpdateDate = worker.lastUpdateDate || new Date().toISOString();
+  const latestLog = history.length > 0 ? history[0] : null;
+  
+  // Derive status and date from history since they are not on the Worker interface directly
+  const currentStatus = (latestLog?.milestone as Milestone) || Milestone.Training;
+  const lastUpdateDate = latestLog?.timestamp || new Date().toISOString();
   
   // Edit State
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone>(currentStatus);
@@ -137,7 +140,7 @@ export const WorkerRow: React.FC<WorkerRowProps> = ({ worker, onUpdate }) => {
                           {log.milestone}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {format(new Date(log.date), 'PP p')}
+                          {format(new Date(log.timestamp), 'PP p')}
                         </span>
                       </div>
                       {log.note && (

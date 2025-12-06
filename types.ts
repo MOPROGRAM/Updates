@@ -20,8 +20,8 @@ export interface UpdateLog {
 
 export interface StatusData {
   status: StatusType;
-  date?: string; // For 'done' status
-  note?: string; // For 'issue' status
+  date?: string; // Available for all statuses now
+  note?: string; 
   updatedBy?: string;
   timestamp?: string;
 }
@@ -49,27 +49,36 @@ export interface WeeklyReportSummary {
   completed: number;
   issues: number;
   waiting: number;
+  breakdown?: StatusBreakdown;
+}
+
+export interface StatusBreakdown {
+  [key: string]: {
+    waiting: number;
+    done: number;
+    issue: number;
+  };
 }
 
 // --- NEW REPORTING STRUCTURES ---
 
 export interface ReportItem {
   workerName: string;
-  detail?: string; // e.g., the date, the note, or the specific issue
+  detail?: string; 
   timestamp?: string;
 }
 
 export interface ReportCategory {
-  categoryName: string; // e.g., "Training", "OEC"
+  categoryName: string; 
   count: number;
   items: ReportItem[];
 }
 
 export interface DetailedStats {
-  recentCompletions: ReportCategory[]; // Completed in the last 7 days
-  bottlenecks: ReportCategory[];       // Currently 'waiting'
-  criticalIssues: ReportCategory[];    // Currently 'issue'
-  upcomingArrivals: ReportItem[];      // Flight dates in future
+  recentCompletions: ReportCategory[]; 
+  bottlenecks: ReportCategory[];       
+  criticalIssues: ReportCategory[];    
+  upcomingArrivals: ReportItem[];      
 }
 
 export interface WeeklyReport {
@@ -78,5 +87,22 @@ export interface WeeklyReport {
   dateFormatted: string;
   workers: Worker[];
   summary: WeeklyReportSummary;
-  detailedStats: DetailedStats; // Added detailed stats
+  detailedStats: DetailedStats; 
+}
+
+// --- AUTH & CHAT ---
+
+export interface UserProfile {
+  username: string;
+  password?: string; // Optional for Google users
+  isGoogle?: boolean;
+  color: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  user: string;
+  text: string;
+  timestamp: string;
+  userColor: string;
 }
